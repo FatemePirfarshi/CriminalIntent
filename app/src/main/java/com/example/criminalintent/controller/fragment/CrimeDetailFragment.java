@@ -1,6 +1,8 @@
 package com.example.criminalintent.controller.fragment;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,30 +14,40 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.criminalintent.R;
-import com.example.criminalintent.controller.activity.CrimeDetailActivity;
 import com.example.criminalintent.model.Crime;
 import com.example.criminalintent.repository.CrimeRepository;
 import com.example.criminalintent.repository.IRepository;
 
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class CrimeDetailFragment extends Fragment {
 
     public static final String TAG = "CDF";
     public static final String ARGS_CRIME_ID = "crimeId";
+    public static final String FRAGMENT_TAG_DATE_PICKER = "DatePicker";
+    public static final int REQUEST_CODE_DATE_PICKER = 0;
 
     private EditText mEditTextTitle;
     private Button mButtonDate;
     private CheckBox mCheckBoxSolved;
 
+
+    private ImageView mImageViewNext;
+    private ImageView mImageViewPrev;
+    private ImageView mImageViewFirst;
+    private ImageView mImageViewLast;
+
     private Crime mCrime;
+    private Crime changeCrime = new Crime();
     private IRepository mRepository;
 
     public static CrimeDetailFragment newInstance(UUID crimeId) {
@@ -145,11 +157,28 @@ public class CrimeDetailFragment extends Fragment {
 
         Log.d(TAG, "onDetach");
     }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (resultCode != Activity.RESULT_OK || data == null)
+            return;
+
+        if (requestCode == REQUEST_CODE_DATE_PICKER) {
+            Date userSelectedDate =
+                    (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_USER_SELECTED_DATE);
+
+            updateCrimeDate(userSelectedDate);
+        }
+    }
 
     private void findViews(View view) {
         mEditTextTitle = view.findViewById(R.id.crime_title);
         mButtonDate = view.findViewById(R.id.crime_date);
         mCheckBoxSolved = view.findViewById(R.id.crime_solved);
+
+        mImageViewFirst = view.findViewById(R.id.img_view_first);
+        mImageViewLast = view.findViewById(R.id.img_view_last);
+        mImageViewNext = view.findViewById(R.id.img_view_next);
+        mImageViewPrev = view.findViewById(R.id.img_view_prev);
     }
 
     private void initViews() {
@@ -185,16 +214,71 @@ public class CrimeDetailFragment extends Fragment {
                 mCrime.setSolved(isChecked);
             }
         });
-
         mButtonDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                DatePickerFragment datePickerFragment =
+                        DatePickerFragment.newInstance(mCrime.getDate());
 
+                //create parent-child relations between CDF and DPF
+                datePickerFragment.setTargetFragment(
+                        CrimeDetailFragment.this,
+                        REQUEST_CODE_DATE_PICKER);
+
+                datePickerFragment.show(
+                        getActivity().getSupportFragmentManager(),
+                        FRAGMENT_TAG_DATE_PICKER);
+            }
+        });
+
+        mImageViewPrev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
+        mImageViewNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = mRepository.getIndex(mCrime);
+                if(index != (mRepository.getCrimes().size() - 1)) {
+                    for (Crime crime: mRepository.getCrimes()) {
+
+                    }
+                    changeCrime = mRepository.getCrimes().get(index + 1);
+                    mRepository.updateCrime(changeCrime);
+                }
+            }
+        });
+
+        mImageViewLast.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                List<Crime> crimes= mRepository.getCrimes();
+                mCrime = crimes.get(crimes.size()-1);
+                updateCrime();
+            }
+        });
+
+        mImageViewFirst.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               mCrime = mRepository.getCrimes().get(0);
+               updateCrime();
             }
         });
     }
 
     private void updateCrime() {
         mRepository.updateCrime(mCrime);
+    }
+
+    private void updateCrimeDate(Date userSelectedDate) {
+        mCrime.setDate(userSelectedDate);
+        updateCrime();
+
+        mButtonDate.setText(mCrime.getDate().toString());
     }
 }

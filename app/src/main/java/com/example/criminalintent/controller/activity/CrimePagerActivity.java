@@ -9,8 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -23,7 +21,7 @@ import com.example.criminalintent.repository.IRepository;
 import java.util.List;
 import java.util.UUID;
 
-public class CrimePagerActivity extends AppCompatActivity {
+public class  CrimePagerActivity extends AppCompatActivity {
 
     public static final String EXTRA_CRIME_ID = "com.example.criminalintent.crimeId";
     public static final String TAG = "CPA";
@@ -56,6 +54,9 @@ public class CrimePagerActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+
+        mViewPagerCrimes.setPageTransformer(new ZoomOutPageTransformer());
+
         List<Crime> crimes = mRepository.getCrimes();
         CrimePagerAdapter adapter = new CrimePagerAdapter(this, crimes);
         mViewPagerCrimes.setAdapter(adapter);
